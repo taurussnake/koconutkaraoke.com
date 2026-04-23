@@ -159,6 +159,85 @@
       font-weight: 600;
     }
 
+    /* Contact / feedback block */
+    .contact-trigger {
+      margin-top: 22px;
+      background: none;
+      border: none;
+      color: #824d2c;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 6px 10px;
+    }
+    .contact-trigger:hover { color: #FF7F7F; }
+
+    .contact-form {
+      width: 100%;
+      margin-top: 16px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.75);
+      border-radius: 16px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    }
+    .contact-form.open { display: flex; }
+    .contact-form h3 {
+      font-size: 1.05rem;
+      color: #824d2c;
+      margin-bottom: 2px;
+    }
+    .contact-form p.hint {
+      font-size: 0.78rem;
+      color: #6B6B6B;
+      line-height: 1.35;
+    }
+    .contact-form input, .contact-form select, .contact-form textarea {
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 10px 12px;
+      border: 1.5px solid #FFD6DC;
+      border-radius: 10px;
+      background: #fff;
+      color: #3D3D3D;
+      outline: none;
+      width: 100%;
+    }
+    .contact-form input:focus, .contact-form select:focus, .contact-form textarea:focus {
+      border-color: #FF7F7F;
+      box-shadow: 0 0 0 3px rgba(255, 127, 127, 0.15);
+    }
+    .contact-form textarea { min-height: 90px; resize: vertical; }
+    .contact-form button.submit {
+      background: linear-gradient(135deg, #FFB6C8, #FF7F7F);
+      color: #fff;
+      font-weight: 800;
+      font-size: 1rem;
+      padding: 11px 20px;
+      border: none;
+      border-radius: 24px;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .contact-form button.submit:hover { transform: translateY(-1px); }
+    .contact-form button.submit:disabled { opacity: 0.6; cursor: not-allowed; }
+    .contact-form .status {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-align: center;
+    }
+    .contact-form .status.ok { color: #2a9d6b; }
+    .contact-form .status.err { color: #c0392b; }
+    /* Honeypot — invisible to humans, irresistible to bots */
+    .contact-form .hp {
+      position: absolute; left: -9999px; top: -9999px;
+      width: 1px; height: 1px; opacity: 0; pointer-events: none;
+    }
+
     .footer {
       margin-top: 16px;
       font-size: 0.75rem;
@@ -212,6 +291,32 @@
 
     <p class="coming-soon">Mobile apps coming soon</p>
 
+    <button type="button" class="contact-trigger" id="contact-trigger" aria-expanded="false" aria-controls="contact-form">
+      Have feedback or a feature idea?
+    </button>
+
+    <form class="contact-form" id="contact-form" novalidate>
+      <h3>Tell us what you think</h3>
+      <p class="hint">We read every message. Leave an email if you'd like a reply.</p>
+      <label class="hp" aria-hidden="true">
+        Leave this empty
+        <input type="text" name="website" tabindex="-1" autocomplete="off">
+      </label>
+      <select name="category" required>
+        <option value="">What's this about?</option>
+        <option value="bug">Something's broken</option>
+        <option value="feature">A feature idea</option>
+        <option value="ui">Design or UX</option>
+        <option value="sync">Cast / TV / sync</option>
+        <option value="other">Something else</option>
+      </select>
+      <input type="text" name="name" placeholder="Your name (optional)" maxlength="100" autocomplete="name">
+      <input type="email" name="email" placeholder="Your email (optional, for reply)" maxlength="255" autocomplete="email">
+      <textarea name="message" placeholder="What's on your mind?" maxlength="2000" required></textarea>
+      <button type="submit" class="submit">Send</button>
+      <div class="status" id="contact-status" role="status" aria-live="polite"></div>
+    </form>
+
     <div class="footer">
       <img src="koconut_logo.png" alt="" class="koppy-mini">
       &copy; 2026 Koconut Karaoke
@@ -219,5 +324,69 @@
       <a href="/privacy.html" style="color:#aaa; text-decoration:underline;">Privacy Policy</a>
     </div>
   </div>
+
+  <script>
+    (function () {
+      var API = 'https://api.koconutkaraoke.com/api/public/feedback';
+      var trigger = document.getElementById('contact-trigger');
+      var form = document.getElementById('contact-form');
+      var status = document.getElementById('contact-status');
+
+      trigger.addEventListener('click', function () {
+        var open = form.classList.toggle('open');
+        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        status.className = 'status';
+        status.textContent = '';
+
+        var data = Object.fromEntries(new FormData(form).entries());
+        if (!data.category || !data.message || !data.message.trim()) {
+          status.className = 'status err';
+          status.textContent = 'Please pick a category and write a message.';
+          return;
+        }
+
+        var btn = form.querySelector('button.submit');
+        btn.disabled = true;
+        btn.textContent = 'Sending…';
+
+        fetch(API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            category: data.category,
+            message: data.message.trim(),
+            name: (data.name || '').trim() || undefined,
+            email: (data.email || '').trim() || undefined,
+            page: '/',
+            website: data.website || '',
+          }),
+        })
+          .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+          .then(function (res) {
+            if (res.ok) {
+              form.reset();
+              status.className = 'status ok';
+              status.textContent = 'Thanks — we got it.';
+            } else {
+              status.className = 'status err';
+              status.textContent = (res.body && res.body.error) || 'Something went wrong.';
+            }
+          })
+          .catch(function () {
+            status.className = 'status err';
+            status.textContent = 'Network error. Please try again.';
+          })
+          .finally(function () {
+            btn.disabled = false;
+            btn.textContent = 'Send';
+          });
+      });
+    })();
+  </script>
 </body>
 </html>
