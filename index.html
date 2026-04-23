@@ -161,18 +161,39 @@
 
     /* Contact / feedback block */
     .contact-trigger {
-      margin-top: 22px;
-      background: none;
-      border: none;
+      margin-top: 24px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.85);
+      border: 2px solid #FFB6C8;
       color: #824d2c;
       font-family: inherit;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       font-weight: 700;
       cursor: pointer;
-      text-decoration: underline;
-      padding: 6px 10px;
+      padding: 14px 18px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
     }
-    .contact-trigger:hover { color: #FF7F7F; }
+    .contact-trigger:hover {
+      transform: translateY(-1px);
+      border-color: #FF7F7F;
+      box-shadow: 0 4px 14px rgba(255, 127, 127, 0.2);
+    }
+    .contact-trigger .emoji {
+      font-size: 1.15rem;
+    }
+    .contact-trigger .sub {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #6B6B6B;
+      margin-top: 2px;
+    }
 
     .contact-form {
       width: 100%;
@@ -292,7 +313,11 @@
     <p class="coming-soon">Mobile apps coming soon</p>
 
     <button type="button" class="contact-trigger" id="contact-trigger" aria-expanded="false" aria-controls="contact-form">
-      Have feedback or a feature idea?
+      <span class="emoji">&#128172;</span>
+      <span>
+        Share feedback or an idea
+        <span class="sub">We read every message</span>
+      </span>
     </button>
 
     <form class="contact-form" id="contact-form" novalidate>
